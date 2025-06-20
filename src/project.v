@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Your Name
+ * Copyright (c) 2025 Robert Bellchambers
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -16,12 +16,22 @@ module tt_um_example (
     input  wire       rst_n     // reset_n - low to reset
 );
 
-  // All output pins must be assigned. If not used, assign to 0.
-  assign uo_out  = ui_in + uio_in;  // Example: ou_out is the sum of ui_in and uio_in
-  assign uio_out = 0;
-  assign uio_oe  = 0;
+  reg rst_n_i;
+  reg [7:0] cnt;
 
-  // List all unused inputs to prevent warnings
-  wire _unused = &{ena, clk, rst_n, 1'b0};
+  always @(posedge clk or negedge rst_n)
+    if (~rst_n) rst_n_i <= 1'b0;
+    else rst_n_i <= 1'b1;
+
+  always @(posedge clk or negedge rst_n_i)
+    if (~rst_n_i) cnt <= 0;
+    else cnt <= cnt + 1;
+
+  assign uo_out  = ~rst_n ? ui_in : ui_in[0] ? cnt : uio_in;
+  assign uio_out = ui_in[0] ? cnt : 8'h00;
+  assign uio_oe  = rst_n && ui_in[0] ? 8'hff : 8'h00;
+
+  // avoid linter warning about unused pins:
+  wire _unused_pins = ena;
 
 endmodule
